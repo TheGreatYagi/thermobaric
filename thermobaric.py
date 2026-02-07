@@ -10,20 +10,11 @@ logging.basicConfig(level=logging.INFO, handlers=[
                         logging.StreamHandler()
                     ], format="%(asctime)s || %(levelname)s => %(message)s    ")
 
-
-
 # Constants:
 GB = 1073741824
 MB = 1048576
 KB = 1024
 
-'''
- Four types of zip bombs:
-    1. A zip file with one large file inside using high compression ratios
-    2. A sharded zip file, containing thousands of small(ish) files with high compression ratios
-    3. A traditional zip slip, using file names like '../../../../etc/passwd' or '../../../../Windows/System32/config/SAM'
-    4. infinite recusion, zip files within zip files within zip files....
-'''
 def validate_args(args: argparse.Namespace) -> bool:
     if args.outFile == "":
         logger.error("Outfile must be a valid name")
@@ -163,6 +154,7 @@ if __name__ == "__main__":
     attacks.add_argument('-sf','--slip-file',action='extend',nargs='*',help="slip file name to store, can provide multiple names")
     attacks.add_argument("-x","--shard", help="Generate Sharded zip bomb",action='store_true')
     attacks.add_argument("-xn","--shard-num",help="Number of shards to create", type=int)
+    # need to add zip slip attack using symlinks
     attacks.add_argument("-t", help="traditional zip bomb",action='store_true')
     size_manip.add_argument('-Sb', help="file size to compress in bytes", type=int,default=0)
     size_manip.add_argument('-Sk',help="file size to compress in kilobytes", type=int,default=0)
