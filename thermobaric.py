@@ -133,7 +133,6 @@ def slip(zip_name: list, file_name: str,comp=5):
         
 
 def main(args):
-    print_title()
     logger.debug(f"found args: {args}")
     if ( validate_args(args) ):
         if args.t:
@@ -190,5 +189,6 @@ if __name__ == "__main__":
     file_manip.add_argument('-c', '--compression', help='Compression level.',type=int,default=1)
     file_manip.add_argument("-f","--outFile",help="Final output filename", type=str, required=True)
     file_manip.add_argument("-d","--depth", help="depth of recursion", type=int)
+    print_title()
     args = parser.parse_args()
     main(args)

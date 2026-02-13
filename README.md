@@ -6,6 +6,13 @@ Zip Bomb utility for security reaseach purposes ONLY.
 ### Command line 
 
 ```bash 
+💥===========================================================💥
+   __  __                              __               _
+  / /_/ /_  ___  _________ ___  ____  / /_  ____ ______(_)____
+ / __/ __ \/ _ \/ ___/ __ `__ \/ __ \/ __ \/ __ `/ ___/ / ___/
+/ /_/ / / /  __/ /  / / / / / / /_/ / /_/ / /_/ / /  / / /__
+\__/_/ /_/\___/_/  /_/ /_/ /_/\____/_.___/\__,_/_/  /_/\___/
+💥===========================================================💥
 usage: thermobaric.py [-h] [-r] [-s] [-sf [SLIP_FILE ...]] [-x] [-xn SHARD_NUM] [-t] [-Sb SB] [-Sk SK]
                       [-Sm SM] [-Sg SG] [-c COMPRESSION] -f OUTFILE [-d DEPTH]
 
@@ -17,21 +24,22 @@ Attack Types:
 
   -r, --recursive       Generate recursive zip bomb
   -s, --slip            Generate Zip Slip
-  -sf, --slip-file [SLIP_FILE ...]
+  -sf [SLIP_FILE ...], --slip-file [SLIP_FILE ...]
                         slip file name to store, can provide multiple names
   -x, --shard           Generate Sharded zip bomb
-  -xn, --shard-num SHARD_NUM
+  -xn SHARD_NUM, --shard-num SHARD_NUM
                         Number of shards to create
   -t                    traditional zip bomb
 
 File Modifiers:
   Arguments to modify file structures
 
-  -c, --compression COMPRESSION
+  -c COMPRESSION, --compression COMPRESSION
                         Compression level.
-  -f, --outFile OUTFILE
+  -f OUTFILE, --outFile OUTFILE
                         Final output filename
-  -d, --depth DEPTH     depth of recursion
+  -d DEPTH, --depth DEPTH
+                        depth of recursion
 
 Size Modifiers:
   File size of compressed files.
