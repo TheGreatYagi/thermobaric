@@ -2,14 +2,7 @@ import zipfile as z
 import argparse
 import logging
 from os import remove
-<<<<<<< HEAD
 from datetime import datetime
-
-# setup logging info
-logger = logging.getLogger("util")
-logging.basicConfig(level=logging.INFO, handlers=[
-                        logging.FileHandler(f"thermobaric-{datetime.now().strftime('%Y%m%d_%H%S')}.log"),
-=======
 import uuid
 
 # setup logging info
@@ -17,7 +10,6 @@ logger = logging.getLogger("util")
 logging.basicConfig(level=logging.INFO, 
                     handlers=[
                         logging.FileHandler("thermobaric-dev.log","a"),
->>>>>>> 2e2a81b (Modified shard() to have massive file names for metadata testing. Modified recursive() to accept an input file name to continue adding recursion past 975 (still requires multiple runs))
                         logging.StreamHandler()
                     ], 
                     format="%(asctime)s || %(levelname)s => %(message)s    "
@@ -213,10 +205,6 @@ if __name__ == "__main__":
     file_manip.add_argument('-c', '--compression', help='Compression level.',type=int,default=1)
     file_manip.add_argument("-f","--outFile",help="Final output filename", type=str, required=True)
     file_manip.add_argument("-d","--depth", help="depth of recursion", type=int)
-<<<<<<< HEAD
-    print_title()
-=======
     file_manip.add_argument("-i","--input", help="File to use as input", type=str, default="")
->>>>>>> 2e2a81b (Modified shard() to have massive file names for metadata testing. Modified recursive() to accept an input file name to continue adding recursion past 975 (still requires multiple runs))
     args = parser.parse_args()
     main(args)
