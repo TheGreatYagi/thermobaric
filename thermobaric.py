@@ -23,7 +23,7 @@ KB = 1024
 def print_title() -> None:
 
     print("💥" + "="*59 + "💥")
-    print("""   __  __                              __               _
+    print(r"""   __  __                              __               _
   / /_/ /_  ___  _________ ___  ____  / /_  ____ ______(_)____
  / __/ __ \/ _ \/ ___/ __ `__ \/ __ \/ __ \/ __ `/ ___/ / ___/
 / /_/ / / /  __/ /  / / / / / / /_/ / /_/ / /_/ / /  / / /__
@@ -187,6 +187,7 @@ def main(args):
 
 
 if __name__ == "__main__":
+    print_title()
     parser = argparse.ArgumentParser()
     attacks = parser.add_argument_group(title="Attack Types", description="Various attack types supported by this tool")
     file_manip = parser.add_argument_group(title="File Modifiers", description="Arguments to modify file structures")
