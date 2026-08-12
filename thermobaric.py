@@ -3,14 +3,26 @@ import zipfile as z
 import argparse
 import logging
 from os import remove
+<<<<<<< HEAD
 from datetime import datetime
 
 # setup logging info
 logger = logging.getLogger("util")
 logging.basicConfig(level=logging.INFO, handlers=[
                         logging.FileHandler(f"thermobaric-{datetime.now().strftime('%Y%m%d_%H%S')}.log"),
+=======
+import uuid
+
+# setup logging info
+logger = logging.getLogger("util")
+logging.basicConfig(level=logging.INFO, 
+                    handlers=[
+                        logging.FileHandler("thermobaric-dev.log","a"),
+>>>>>>> 2e2a81b (Modified shard() to have massive file names for metadata testing. Modified recursive() to accept an input file name to continue adding recursion past 975 (still requires multiple runs))
                         logging.StreamHandler()
-                    ], format="%(asctime)s || %(levelname)s => %(message)s    ")
+                    ], 
+                    format="%(asctime)s || %(levelname)s => %(message)s    "
+                    )
 
 # Constants:
 GB = 1073741824
@@ -55,7 +67,7 @@ def validate_args(args: argparse.Namespace) -> bool:
     elif ((args.slip is True) and (args.slip_file is None)):
         logger.error("Must have file name for slip attack")
         return False
-    elif ((len(size) == 0) and (args.slip is False)):
+    elif ((len(size) == 0) and (args.slip is False and args.input == "")):
         logger.error("Must have at least one configured size.")
         return False
     return True
@@ -81,13 +93,14 @@ def shard(size: float, name: str, comp=5, number=5) -> None:
     with z.ZipFile(name,'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
         logger.info(f"Now generating {number} shards of size {size}")
         for x in range(0, number):
-            zf.writestr(f"shard-{x}.dat", to_write)
+            zf.writestr(f"{uuid.uuid4().hex}{uuid.uuid4().hex}{uuid.uuid4().hex}{uuid.uuid4().hex}{uuid.uuid4().hex}{uuid.uuid4().hex}{uuid.uuid4().hex}.bin",to_write)
+            #zf.writestr(f"shard-{x}.dat", to_write)
             logger.debug(f"Wrote shard number {x}")
         zf.close()
     logger.info(f"Zip file: {name} created.")
 
-def recursive(size:float, name:str, comp=5, depth=3, is_first=True):
-    logger.debug(f"recursive called: size={size},name={name},comp={comp},depth={depth},if_first={is_first}")
+def recursive(size:float, name:str, comp=5, depth=3, is_first=True, input_file=""):
+    logger.debug(f"recursive called: size={size}, out_name={name}, comp={comp}, depth={depth}, if_first={is_first}, input_file={input_file}")
     if depth == 1:
         #write the final zip file and exit
         logger.debug(f"depth is now {depth}")
@@ -100,16 +113,25 @@ def recursive(size:float, name:str, comp=5, depth=3, is_first=True):
         return
     elif is_first:
         logger.info(f"Starting recursive zip generation")
-        # this run will create the file with specified size
-        logger.debug(f"Found first run, need to generate file of size {size}")
-        with z.ZipFile(f"level-{depth}.zip",'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
-            to_write = b"X" * size
-            logger.info(f"Starting material generation of size {len(to_write)} bytes")
-            if len(to_write) > 26843545500:
-                logger.warning(f"Writting a file larger than 25Gb, this will consume system resources")
-            zf.writestr("data.bin",to_write)
-            zf.close()
-        logger.debug(f"level-{depth}.zip wrote to disk!")
+        # Can branch here to take a different file as first input instead of generating (eg first 
+        # generate a shard, then use shard to make recursive). 
+        if (input_file != ""):
+            logger.debug(f"found input file: {input_file}")
+            with z.ZipFile(f"level-{depth}.zip",'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
+                logger.info(f"Adding file {input_file} to first layer")
+                zf.write(input_file)
+                zf.close()
+        else:
+            # this run will create the file with specified size
+            logger.debug(f"Found first run, need to generate file of size {size}")
+            with z.ZipFile(f"level-{depth}.zip",'w',compression=z.ZIP_DEFLATED,compresslevel=comp) as zf:
+                to_write = b"X" * size
+                logger.info(f"Starting material generation of size {len(to_write)} bytes")
+                if len(to_write) > 26843545500:
+                    logger.warning(f"Writting a file larger than 25Gb, this will consume system resources")
+                zf.writestr("data.bin",to_write)
+                zf.close()
+            logger.debug(f"level-{depth}.zip wrote to disk!")
         recursive(size, name, comp=comp, depth=(depth-1), is_first=False)
     else:
         logger.debug(f"Not first run, depth is now {depth}")
@@ -119,6 +141,9 @@ def recursive(size:float, name:str, comp=5, depth=3, is_first=True):
         logger.debug(f"level-{depth}.zip wrote to disk!")
         logger.debug(f"Now attempting to delete level-{(depth+1)}.zip")
         remove(f"level-{(depth+1)}.zip")
+        if logger.isEnabledFor(logger.DEBUG):
+            if (depth % 10 == 0):
+                logger.debug(f"Now on depth: {depth}")
         recursive(size, name, comp=comp, depth=(depth-1), is_first=False)
 
 
@@ -162,7 +187,7 @@ def main(args):
             elif args.Sm:
                 recursive((args.Sm * MB), args.outFile, args.compression, args.depth)
             else:
-                recursive((args.Sg * GB), args.outFile, args.compression, args.depth)
+                recursive((args.Sg * GB), args.outFile, args.compression, args.depth, input_file=args.input)
         elif args.slip:
             slip(args.outFile, args.slip_file, args.compression)
         else:
@@ -189,6 +214,10 @@ if __name__ == "__main__":
     file_manip.add_argument('-c', '--compression', help='Compression level.',type=int,default=1)
     file_manip.add_argument("-f","--outFile",help="Final output filename", type=str, required=True)
     file_manip.add_argument("-d","--depth", help="depth of recursion", type=int)
+<<<<<<< HEAD
     print_title()
+=======
+    file_manip.add_argument("-i","--input", help="File to use as input", type=str, default="")
+>>>>>>> 2e2a81b (Modified shard() to have massive file names for metadata testing. Modified recursive() to accept an input file name to continue adding recursion past 975 (still requires multiple runs))
     args = parser.parse_args()
     main(args)
